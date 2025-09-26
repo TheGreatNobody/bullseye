@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-Hans-TW" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>異步操作驗證系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-box {
+            min-height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">異步操作驗證系統</h1>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>長時間運行任務</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="taskName" class="form-label">任務名稱:</label>
+                        <input type="text" class="form-control" id="taskName" value="示例任務">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="performTask()">執行異步任務[url: /async/task]</button>
+                    <div id="taskResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>同步呼叫非同步-長時間運行任務</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-primary" onclick="syncToAsyncPerformTask()">執行異步任務[url: /sync/to-async-perform-task]</button>
+                    <div id="syncToAsyncPerformTaskResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>階乘計算</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="number" class="form-label">數字:</label>
+                        <input type="number" class="form-control" id="number" value="5" min="1" max="10">
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="calculateFactorial()">計算階乘</button>
+                    <div id="factorialResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>發送郵件</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="recipient" class="form-label">收件人:</label>
+                        <input type="email" class="form-control" id="recipient" value="test@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">主題:</label>
+                        <input type="text" class="form-control" id="subject" value="測試郵件">
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label">內容:</label>
+                        <textarea class="form-control" id="content" rows="3">這是一封測試郵件</textarea>
+                    </div>
+                    <button type="button" class="btn btn-info" onclick="sendEmail()">發送郵件</button>
+                    <div id="emailResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>多重任務執行</h5>
+                </div>
+                <div class="card-body">
+                    <p>同時執行多個異步任務</p>
+                    <button type="button" class="btn btn-warning" onclick="performMultipleTasks()">執行多重任務[url: /async/multiple]</button>
+                    <div id="multipleResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Server-Sent Events (SSE) 演示</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-secondary" onclick="startSSE()">開始 SSE 串流</button>
+                    <button type="button" class="btn btn-danger" onclick="stopSSE()">停止 SSE 串流</button>
+                    <div id="sseResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let eventSource = null;
+
+    function showLoading(elementId) {
+        document.getElementById(elementId).innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">載入中...</span></div> 處理中...';
+    }
+
+    function performTask() {
+        const taskName = document.getElementById('taskName').value;
+        showLoading('taskResult');
+
+        fetch('/av/async/task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'taskName=' + encodeURIComponent(taskName)
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('taskResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('taskResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function syncToAsyncPerformTask() {
+<!--        const taskName = document.getElementById('taskName').value;-->
+        showLoading('syncToAsyncPerformTaskResult');
+
+        fetch('/av/sync/to-async-perform-task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+<!--            body: 'taskName=' + encodeURIComponent(taskName)-->
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('syncToAsyncPerformTaskResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('syncToAsyncPerformTaskResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function calculateFactorial() {
+        const number = document.getElementById('number').value;
+        showLoading('factorialResult');
+
+        fetch('/av/async/factorial', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'number=' + encodeURIComponent(number)
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('factorialResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('factorialResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function sendEmail() {
+        const recipient = document.getElementById('recipient').value;
+        const subject = document.getElementById('subject').value;
+        const content = document.getElementById('content').value;
+        showLoading('emailResult');
+
+        fetch('/av/async/email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'recipient=' + encodeURIComponent(recipient) +
+                  '&subject=' + encodeURIComponent(subject) +
+                  '&content=' + encodeURIComponent(content)
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('emailResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('emailResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function performMultipleTasks() {
+        showLoading('multipleResult');
+
+        fetch('/av/async/multiple')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('multipleResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('multipleResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function startSSE() {
+        if (eventSource) {
+            eventSource.close();
+        }
+
+        document.getElementById('sseResult').innerHTML = '連接 SSE 串流...<br>';
+
+        eventSource = new EventSource('/sse');
+
+        eventSource.onmessage = function(event) {
+            const sseResult = document.getElementById('sseResult');
+            sseResult.innerHTML += event.data + '<br>';
+            sseResult.scrollTop = sseResult.scrollHeight;
+        };
+
+        eventSource.onerror = function(event) {
+            document.getElementById('sseResult').innerHTML += 'SSE 連接錯誤<br>';
+        };
+
+        eventSource.onopen = function(event) {
+            document.getElementById('sseResult').innerHTML += 'SSE 連接已建立<br>';
+        };
+    }
+
+    function stopSSE() {
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+            document.getElementById('sseResult').innerHTML += 'SSE 連接已關閉<br>';
+        }
+    }
+</script>
+</body>
+</html>

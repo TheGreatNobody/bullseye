@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.10</version>
+        <relativePath /> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.sun</groupId>
+    <artifactId>bullseye</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <spring.boot.version>3.4.10</spring.boot.version>
+        <jjwt.version>0.9.1</jjwt.version>
+        <mybatis.version>2.3.1</mybatis.version>
+        <mssql.version>7.4.1.jre8</mssql.version>
+        <postgresql.version>42.6.0</postgresql.version>
+    </properties>
+
+    <modules>
+        <module>async-validation</module>
+    </modules>
+
+</project>
