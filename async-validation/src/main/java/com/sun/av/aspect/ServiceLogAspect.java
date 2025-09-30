@@ -4,12 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
 @Slf4j
-public class ServiceLoggingAspect {
+public class ServiceLogAspect {
 
     /**
      * 定義切入點：攔截所有 com.sun.av.service 包下的方法
@@ -19,16 +20,16 @@ public class ServiceLoggingAspect {
     public void serviceMethods() {}
 
     // 前置通知
-    @Before("serviceMethods()")
-    public void beforeAdvice(JoinPoint joinPoint) {
-        log.info("執行前：{}", joinPoint.getSignature());
-    }
+//    @Before("serviceMethods()")
+//    public void beforeAdvice(JoinPoint joinPoint) {
+//        log.info("執行前：{}", joinPoint.getSignature());
+//    }
 
     // 後置通知
-    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
-    public void afterReturningAdvice(JoinPoint joinPoint, Object result) {
-        log.info("執行後：{}，結果：{}", joinPoint.getSignature(), result);
-    }
+//    @AfterReturning(pointcut = "serviceMethods()", returning = "result")
+//    public void afterReturningAdvice(JoinPoint joinPoint, Object result) {
+//        log.info("執行後：{}，結果：{}", joinPoint.getSignature(), result);
+//    }
 
     // 例外通知
     @AfterThrowing(pointcut = "serviceMethods()", throwing = "ex")
@@ -39,9 +40,13 @@ public class ServiceLoggingAspect {
     // 環繞通知
     @Around("serviceMethods()")
     public Object aroundAdvice(ProceedingJoinPoint pjp) throws Throwable {
-        log.info("環繞開始：{}", pjp.getSignature());
+        long startTime = System.currentTimeMillis();
+        MethodSignature signature = (MethodSignature) pjp.getSignature();
+        String methodName = signature.getDeclaringType().getSimpleName() + "." + signature.getName();
+        log.info("➡️ Around Service：{}，Start:{}", methodName, startTime);
         Object result = pjp.proceed(); // 執行原方法
-        log.info("環繞結束：{}", pjp.getSignature());
+        long endTime = System.currentTimeMillis();
+        log.info("✅ Around Service：{}，End:{}，Cost：{} ms", methodName, endTime, (endTime - startTime));
         return result;
     }
 }

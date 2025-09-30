@@ -28,7 +28,6 @@ public class ControllerLogAspect {
     }
 
     @Around("allControllers()")
-
     public Object logExecutionDetails(ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
@@ -39,7 +38,7 @@ public class ControllerLogAspect {
         boolean hideParams = isSensitive && method.getAnnotation(SensitiveLog.class).hideParams();
 
         long startTime = System.currentTimeMillis();
-        log.info("➡️ 開始執行方法：{}", methodName);
+        log.info("➡️ Around Controller：{}，Start :{}", methodName, startTime);
         if (!hideParams) {
             log.info("📦 參數：{}", Arrays.toString(args));
         } else {
@@ -55,7 +54,7 @@ public class ControllerLogAspect {
         }
 
         long endTime = System.currentTimeMillis();
-        log.info("✅ 方法執行完成：{}，耗時：{} ms", methodName, (endTime - startTime));
+        log.info("✅ Around Controller：{}，End:{}，Cost：{} ms", methodName, endTime, (endTime - startTime));
 
         return result;
     }

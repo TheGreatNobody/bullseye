@@ -10,9 +10,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
 
 @RequestMapping("/sync")
 @Controller
@@ -36,12 +36,21 @@ public class SyncController {
     @PostMapping("/to-async-perform-task")
     @ResponseBody
     public CompletableFuture<String> syncToAsyncPerformTask() {
-        logger.info("Received request for sync task: {}", "performSyncTask");
+        logger.info("執行前");
         CompletableFuture<String> future = syncTaskService.toAsyncPerformTask();
-        logger.info("執行中: {}", "service 之後1");
-        logger.info("執行中: {}", "service 之後2");
-        logger.info("執行中: {}", "service 之後3");
+        logger.info("執行後");
         return future;
+    }
+
+    @PostMapping("/to-multiple-async-perform-task")
+    @ResponseBody
+    public List<String> syncToMultipleAsyncPerformTask() throws ExecutionException, InterruptedException, TimeoutException {
+        logger.info("執行前");
+        CompletableFuture<List<String>> future = syncTaskService.toMultipleAsyncPerformTask(Arrays.asList("任務一","任務二","任務三"));
+//        List<String> results = future.join(); // 會阻塞
+        List<String> results = future.get(30, TimeUnit.SECONDS);
+        logger.info("執行後");
+        return results;
     }
 
     @PostMapping("/factorial")

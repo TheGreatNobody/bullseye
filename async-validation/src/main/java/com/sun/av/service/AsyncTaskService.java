@@ -28,12 +28,7 @@ public class AsyncTaskService {
         String result = "Task completed: " + taskName + " on thread: " + Thread.currentThread().getName();
         logger.info("Completed task: {}", taskName);
 
-        CompletableFuture<String> future = CompletableFuture.completedFuture(result);
-//
-
-//        performLongRunningTaskPrivate(taskName);
-//        return performLongRunningTaskPrivate(taskName);
-        return future;
+        return CompletableFuture.completedFuture(result);
     }
 
     @Async("taskExecutor")

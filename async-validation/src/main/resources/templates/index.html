@@ -52,6 +52,18 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
+                    <h5>同步呼叫多筆非同步-長時間運行任務</h5>
+                </div>
+                <div class="card-body">
+                    <button type="button" class="btn btn-primary" onclick="syncToMultipleAsyncPerformTask()">執行異步任務[url: /sync/to-multiple-async-perform-task]</button>
+                    <div id="syncToMultipleAsyncPerformTaskResult" class="result-box"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
                     <h5>階乘計算</h5>
                 </div>
                 <div class="card-body">
@@ -166,6 +178,24 @@
         })
         .catch(error => {
             document.getElementById('syncToAsyncPerformTaskResult').innerHTML = '<strong>錯誤:</strong> ' + error;
+        });
+    }
+
+    function syncToMultipleAsyncPerformTask() {
+        showLoading('syncToMultipleAsyncPerformTaskResult');
+
+        fetch('/av/sync/to-multiple-async-perform-task', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('syncToMultipleAsyncPerformTaskResult').innerHTML = '<strong>結果:</strong> ' + data;
+        })
+        .catch(error => {
+            document.getElementById('syncToMultipleAsyncPerformTaskResult').innerHTML = '<strong>錯誤:</strong> ' + error;
         });
     }
 
