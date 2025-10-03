@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -15,20 +17,40 @@ public class AsyncTaskService {
 
     @Async("taskExecutor")
     public CompletableFuture<String> performLongRunningTask(String taskName) {
-        logger.info("Starting task: {} on thread: {}", taskName, Thread.currentThread().getName());
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Starting task: {} on thread: {}", taskName, Thread.currentThread().getName());
 
-        try {
-            // 模擬長時間運行的任務
-            Thread.sleep(ThreadLocalRandom.current().nextInt(2000, 15000));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return CompletableFuture.completedFuture("Task interrupted: " + taskName);
-        }
+            try {
+                // 模擬長時間運行的任務
+                Thread.sleep(ThreadLocalRandom.current().nextInt(2000, 6000));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CompletionException(e);
+            }
 
-        String result = "Task completed: " + taskName + " on thread: " + Thread.currentThread().getName();
-        logger.info("Completed task: {}", taskName);
+            String result = "Task completed: " + taskName + " on thread: " + Thread.currentThread().getName();
+            logger.info("Completed task: {}", taskName);
+            return result;
+        });
+    }
 
-        return CompletableFuture.completedFuture(result);
+    @Async("taskExecutor")
+    public CompletableFuture<List<String>> performLongRunningTask(List<String> tasks) {
+        logger.info("Starting task on thread: {}", Thread.currentThread().getName());
+
+        List<CompletableFuture<String>> futureList = tasks.stream()
+                .map(t -> {
+                    logger.info(t);
+                    return performLongRunningTask(t);
+                })
+                .toList();
+
+        CompletableFuture<List<String>> futureCombine = CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futureList.stream().map(CompletableFuture::join).toList());
+
+        logger.info("Completed task- Task completed on thread: {}", Thread.currentThread().getName());
+
+        return futureCombine;
     }
 
     @Async("taskExecutor")

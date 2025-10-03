@@ -27,12 +27,6 @@ class AsyncControllerTest {
     @MockitoBean
     private AsyncTaskService asyncTaskService;
 
-    @Test
-    void testIndex() throws Exception {
-        mockMvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("index"));
-    }
 
     @Test
     void testPerformAsyncTask() throws Exception {
@@ -66,11 +60,5 @@ class AsyncControllerTest {
                 .andExpect(status().isOk());
     }
 
-    @Test
-    void testDemo() throws Exception {
-        mockMvc.perform(get("/demo"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("demo"))
-                .andExpect(model().attribute("message", "異步操作演示頁面"));
-    }
+
 }

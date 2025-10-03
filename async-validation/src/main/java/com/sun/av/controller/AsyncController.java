@@ -5,13 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
 
 @RequestMapping("/async")
 @Controller
@@ -23,20 +23,73 @@ public class AsyncController {
     @Autowired
     private AsyncTaskService asyncTaskService;
 
-//    @GetMapping("/")
-//    public String index() {
-//        return "index";
-//    }
-
     @PostMapping("/task")
     @ResponseBody
     public CompletableFuture<String> performAsyncTask(@RequestParam String taskName) {
-        logger.info("Received request for async task: {}", taskName);
+        logger.info("[Before Service] Received request for async task: {}", taskName);
         CompletableFuture<String> future = asyncTaskService.performLongRunningTask(taskName);
-        logger.info("執行中: {}", "service 之後1");
-        logger.info("執行中: {}", "service 之後2");
-        logger.info("執行中: {}", "service 之後3");
+        logger.info("[After Service] Received request for async task: {}", taskName);
         return future;
+    }
+
+
+    @PostMapping("/tasks")
+    @ResponseBody
+    public List<String> performAsyncTask(@RequestParam Integer timeout) {
+        logger.info("[Before Service] Received request for async task");
+        CompletableFuture<List<String>> futureCombine = asyncTaskService.performLongRunningTask(Arrays.asList("任務一", "任務二", "任務三"));
+        logger.info("[After Service] Received request for async task");
+        List<String> stringList = new ArrayList<>();
+        try {
+            stringList = futureCombine.get(timeout, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            logger.error("tasks failed.", e);
+        }
+        return stringList;
+    }
+
+    @GetMapping("/tasks/stream")
+    public SseEmitter performAsyncTaskStream(@RequestParam(required = false) String tasks, @RequestParam Integer timeout) {
+        logger.info("[Stream] Received request for async task stream");
+        List<String> taskList = tasks != null ? Arrays.asList(tasks.split(",")) : Arrays.asList("任務一", "任務二", "任務三");
+        Long timeoutL = timeout.longValue() * 1000;
+        SseEmitter emitter = new SseEmitter(timeoutL); // 6秒超時
+
+        executor.execute(() -> {
+            try {
+                List<CompletableFuture<String>> futures = taskList.stream()
+                        .map(asyncTaskService::performLongRunningTask)
+                        .toList();
+
+                // 使用 CompletableFuture.anyOf 來監聽任何一個任務完成
+                List<CompletableFuture<String>> pending = new ArrayList<>(futures);
+
+                while (!pending.isEmpty()) {
+                    CompletableFuture<Object> anyCompleted = CompletableFuture.anyOf(pending.toArray(new CompletableFuture[0]));
+                    Object result = anyCompleted.get();
+
+                    // 找出並移除已完成的任務
+                    pending.removeIf(CompletableFuture::isDone);
+
+                    // 立即推送完成的結果
+                    emitter.send(SseEmitter.event()
+                            .name("task-completed")
+                            .data(result.toString()));
+
+                    logger.info("[Stream] Sent completed task: {}", result);
+                }
+
+                emitter.send(SseEmitter.event().name("all-completed").data("所有任務已完成"));
+                emitter.complete();
+                logger.info("[Stream] All tasks completed");
+
+            } catch (Exception e) {
+                logger.error("[Stream] Error during streaming", e);
+                emitter.completeWithError(e);
+            }
+        });
+
+        return emitter;
     }
 
     @PostMapping("/factorial")
